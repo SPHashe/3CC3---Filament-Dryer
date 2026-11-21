@@ -1,13 +1,13 @@
 #include "Screen.h"
 
-Screen::Screen() : lcd(0, 0, 0, 0, 0, 0)
+Screen::Screen() : lcd(19, 23, 18, 17, 16, 15)
 {
-    Pins[0] = 0;
-    Pins[1] = 0;
-    Pins[2] = 0;
-    Pins[3] = 0;
-    Pins[4] = 0;
-    Pins[5] = 0;
+    Pins[0] = 19;
+    Pins[1] = 23;
+    Pins[2] = 18;
+    Pins[3] = 17;
+    Pins[4] = 16;
+    Pins[5] = 15;
 }
 
 Screen::Screen(int RS, int EN, int D4, int D5, int D6, int D7)
@@ -21,9 +21,8 @@ Screen::Screen(int RS, int EN, int D4, int D5, int D6, int D7)
     Pins[5] = D7;
 }
 
-bool Screen::Begin() {
+void Screen::Begin() {
     lcd.begin(Lcd_MAX[0], Lcd_MAX[1]);
-    return true;
 }
 
 void Screen::Display(String Text, int Row) 

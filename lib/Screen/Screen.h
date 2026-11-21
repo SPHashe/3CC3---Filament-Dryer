@@ -14,7 +14,7 @@ class Screen {
 
         Screen(int RS, int EN, int D4, int D5, int D6, int D7);
 
-        bool Begin();
+        void Begin();
 
         void Display(String Text, int Row);
         
