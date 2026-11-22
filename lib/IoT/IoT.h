@@ -14,7 +14,7 @@ class IoT
 {
 private:
     // Wi-Fi / ThingsBoard config
-    const char *WIFI_SSID = "QT-RTG";
+    const char *WIFI_SSID = "Mehanic";
     const char *WIFI_PASSWORD = "ScaryAhmed";
     const char *TOKEN = "ioJ2M8TIZPF0CF7rlrew";
     const char *THINGSBOARD_SERVER = "mqtt.thingsboard.cloud";
@@ -35,14 +35,16 @@ private:
     const char *TEMP_SETPOINT_ATTR = "TemperatureSetpoint";
     const char *TEMP_TOLERANCE_ATTR = "TemperatureTolerance";
     const char *HUMIDITY_LIMIT_ATTR = "HumidityLimit";
-    const char *ARMED_ATTR = "ArmedCommanded";
+    const char *ARMED_COMMANDED_ATTR = "ArmedCommanded";
+    const char *ARMED_ACTUAL_ATTR = "ArmedActual";
     const char *SETPOINT_REACHED_ATTR = "SetpointReached";
 
     // Cloud-controlled values
-    float TemperatureSetpoint = 60.0f;
-    float TemperatureTolerance = 3.0f;
-    float HumidityLimit = 40.0f;
-    bool ArmedCommanded = false;
+    float* TemperatureSetpoint = nullptr;
+    float* TemperatureTolerance = nullptr;
+    float* HumidityLimit = nullptr;
+    bool* ArmedCommanded = nullptr;
+    bool* ArmedActual = nullptr;
 
     // Runtime state
     bool attributesChanged = false;
@@ -85,28 +87,21 @@ private:
 
     // Helpers
     void initWiFi();
-    bool reconnectWiFi();
     bool connectToThingsBoard();
     void ensureSubscriptions();
-    void sendTelemetry(float temperature, float humidity, bool setpointReached);
+    void sendTelemetry(float temperature, float humidity, bool setpointReached, bool armedActual);
 
-    // Static handlers (the library can't call non-static members)
-    static IoT *instance;
+    static IoT *instance; 
     static void ProcessSharedAttributes(const JsonObjectConst &data);
     static void ProcessSetArmed(const JsonVariantConst &data, JsonDocument &response);
     static void RequestTimedOut();
 
-public:
-    IoT();
+public:    
+    IoT(float *TemperatureSetpoint, float *TemperatureTolerance, float *HumidityLimit, bool* ArmedCommanded, bool *ArmedActual);
+
+    bool reconnectWiFi(); //One of the helpers
 
     void Begin();
 
-    void Loop(float temperature, float humidity, bool setpointReached);
-
-    float GetTemperatureSetpoint()  { return TemperatureSetpoint; }
-    float GetTemperatureTolerance()  { return TemperatureTolerance; }
-    float GetHumidityLimit()  { return HumidityLimit; }
-    bool GetArmed()  { return ArmedCommanded; }
-
-
+    void Loop(float temperature, float humidity, bool setpointReached, bool armedActual);
 };

@@ -1,7 +1,20 @@
+/////////////////////////////////////////////////////////////////////////
+//////                            3CC3 Project                      /////
+////// By: Parsa Hashemi (400516453), and Vic Cuatico (400507885)   /////
+//////                        Smart Filament dryer                  /////
+/////////////////////////////////////////////////////////////////////////
+
+/*To Do
+1. Debug
+2. Connect to cloud (only the main code left)
+3. Program the stepper motor movement
+4. Get the heater logic
+*/
+
 //External Libraries
 #include <Arduino.h>
 #include <DHT.h>
-
+#include <IoT.h>
 
 //Internal Libraries
 #include <Alert.h>
@@ -29,16 +42,18 @@
   const int Timeout = 100000;
   const int BlinkingPeriod = 1000;
 
+  float PreviousSetpoint = 0;
+
 //Cloud Variables
   //Temperature and Humidity
   float Humidity = 0;
   float Temperature = 0;
 
   //Temperature Setpoint
-  float TempSetpoint = 28.00;
-  float HumidityLimit = 40.00;
+  float TempSetpoint = -10000;
+  float HumidityLimit = -10000;
 
-  float TempTolerance = 3; // in c and +/-
+  float TempTolerance = -10000; // in c and +/-
   bool TempSetpointReached = false;
 
   //If spinning or not
@@ -50,9 +65,7 @@
 Alert Alarm(AlarmPin, &TempSetpointReached, Timeout, BlinkingPeriod, TempTolerance);
 Screen Display(RS, EN, D4, D5, D6, D7);
 DHT TandH(HumidAndTemp, DHT11);
-
-
-
+IoT Cloud(&TempSetpoint, &TempTolerance, &HumidityLimit, &ComandedArmed, &ActualArmed);
 
 //Functions
 
@@ -68,6 +81,13 @@ void setup()
 
   //LCD
   Display.Begin();
+
+  //Cloud Init
+  Cloud.Begin();
+
+  //while (TempSetpoint == -10000 || HumidityLimit == -10000 || TempTolerance == -10000)
+  //{
+  //}
 }
 
 void loop() 
@@ -108,8 +128,9 @@ void loop()
 
   }
 
-  Serial.println(TempSetpointReached);
   
+  Cloud.Loop(Temperature, Humidity, TempSetpointReached, ActualArmed);
+
   delay(100);
 }
 
