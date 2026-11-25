@@ -42,18 +42,18 @@
   const int Timeout = 100000;
   const int BlinkingPeriod = 1000;
 
-  float PreviousSetpoint = 0;
+  double PreviousSetpoint = 0;
 
 //Cloud Variables
   //Temperature and Humidity
-  float Humidity = 0;
-  float Temperature = 0;
+  double Humidity = 0;
+  double Temperature = 0;
 
   //Temperature Setpoint
-  float TempSetpoint = -10000;
-  float HumidityLimit = -10000;
+  double TempSetpoint = -10000;
+  double HumidityLimit = -10000;
 
-  float TempTolerance = -10000; // in c and +/-
+  double TempTolerance = -10000; // in c and +/-
   bool TempSetpointReached = false;
 
   //If spinning or not
@@ -62,7 +62,7 @@
 
 
 //Objects
-Alert Alarm(AlarmPin, &TempSetpointReached, Timeout, BlinkingPeriod, TempTolerance);
+Alert Alarm(AlarmPin, &TempSetpointReached, Timeout, BlinkingPeriod, &TempTolerance); 
 Screen Display(RS, EN, D4, D5, D6, D7);
 DHT TandH(HumidAndTemp, DHT11);
 IoT Cloud(&TempSetpoint, &TempTolerance, &HumidityLimit, &ComandedArmed, &ActualArmed);
@@ -85,42 +85,63 @@ void setup()
   //Cloud Init
   Cloud.Begin();
 
-  //while (TempSetpoint == -10000 || HumidityLimit == -10000 || TempTolerance == -10000)
-  //{
-  //}
+  while (TempSetpoint == -10000 || HumidityLimit == -10000 || TempTolerance == -10000)
+  {
+    //Humidity and Temperature
+  Humidity = TandH.readHumidity();
+  Temperature = TandH.readTemperature();
+
+  Serial.println("TSP = " + String(TempSetpoint) + " HL = " + String(HumidityLimit) + " TT = " + String(TempTolerance));
+
+  //LCD
+  Display.Display("Temp: " + String(Temperature) + "C NC", 0);
+  Display.Display("Humidity: " + String(Humidity) + "%", 1);
+  
+  Cloud.Loop(Temperature, Humidity, TempSetpointReached, ActualArmed);
+  delay(100);
+}
 }
 
 void loop() 
 {
+  bool HumidityError = false;
+  bool TempError = false;
+  bool TimeOutError = false;
+
   //Humidity and Temperature
   Humidity = TandH.readHumidity();
   Temperature = TandH.readTemperature();
 
+  //Serial.println("WERE IN FOLKS");
+
   //LCD
-  Display.Display("Temp: " + String(Temperature) + "C", 0);
+  Display.Display("Temp: " + String(Temperature) + "C       ", 0);
   Display.Display("Humidity: " + String(Humidity) + "%", 1);
 
   //Serial Alerts
   if (Alarm.OverHumidityAlert(Humidity, HumidityLimit))
   {
+    HumidityError = true;
     Serial.println("HUMIDITY ALERT");
   }
-
   if (Alarm.OverTempAlert(Temperature, TempSetpoint))
   {
+    TempError = true;
     Serial.println("TEMP ALERT");
   }
-
   if (!TempSetpointReached)
   {
-    if (Temperature == TempSetpoint)
+    if (Temperature >= TempSetpoint - 0.30 && Temperature <= TempSetpoint + 0.30)
     {
       TempSetpointReached = true;
       Alarm.SetReachedSetpoint(TempSetpointReached);
     }
     else 
     {
-      Alarm.TimeoutCheck();
+      if (Alarm.TimeoutCheck())//Check if this is reseting whenevr 
+      {
+        TimeOutError = true;
+      } 
     }
   }
   else
@@ -128,9 +149,22 @@ void loop()
 
   }
 
+  if (!HumidityError && !TempError && !TimeOutError)
+  {
+    Alarm.Silence();
+  }
+
+  if (TempSetpoint != PreviousSetpoint)
+  {
+    PreviousSetpoint = TempSetpoint;
+
+    TempSetpointReached = false;
+    Alarm.SetReachedSetpoint(false);
+  }
+
   
   Cloud.Loop(Temperature, Humidity, TempSetpointReached, ActualArmed);
 
-  delay(100);
+  //delay(1000);
 }
 

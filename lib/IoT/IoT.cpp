@@ -2,13 +2,15 @@
 
 IoT *IoT::instance = nullptr;
 
-IoT::IoT(float *temperatureSetpoint, float *temperatureTolerance, float *humidityLimit, bool* armedCommanded, bool *armedActual)
+IoT::IoT(double  *temperatureSetpoint, double  *temperatureTolerance, double  *humidityLimit, bool* armedCommanded, bool *armedActual)
 {
     TemperatureSetpoint = temperatureSetpoint ;
     TemperatureTolerance = temperatureTolerance;
     HumidityLimit = humidityLimit;
     ArmedCommanded = armedCommanded;
     ArmedActual = armedActual;
+
+    instance = this;
 }
 
 void IoT::Begin()
@@ -50,7 +52,6 @@ bool IoT::connectToThingsBoard()
         return true;
     }
 
-    // Force re-subscribe after any reconnect
     rpcSubscribed = false;
     sharedAttrsSubscribed = false;
     sharedAttrsRequested = false;
@@ -116,16 +117,16 @@ void IoT::ProcessSharedAttributes(const JsonObjectConst &data)
 
         if (strcmp(key, instance->TEMP_SETPOINT_ATTR) == 0)
         {
-            *instance->TemperatureSetpoint = it->value().as<float>();
+            *instance->TemperatureSetpoint = it->value().as<double >();
             Serial.printf("Setpoint: %.1f\n", *instance->TemperatureSetpoint);
         }
         else if (strcmp(key, instance->TEMP_TOLERANCE_ATTR) == 0)
         {
-            *instance->TemperatureTolerance = it->value().as<float>();
+            *instance->TemperatureTolerance = it->value().as<double >();
         }
         else if (strcmp(key, instance->HUMIDITY_LIMIT_ATTR) == 0)
         {
-            *instance->HumidityLimit = it->value().as<float>();
+            *instance->HumidityLimit = it->value().as<double >();
         }
         else if (strcmp(key, instance->ARMED_COMMANDED_ATTR) == 0)
         {
@@ -149,7 +150,7 @@ void IoT::RequestTimedOut()
 
 //Telemetry
 
-void IoT::sendTelemetry(float temperature, float humidity, bool setpointReached, bool armedActual)
+void IoT::sendTelemetry(double  temperature, double  humidity, bool setpointReached, bool armedActual)
 {
     
     tb.sendTelemetryData("Temperature", temperature);
@@ -162,7 +163,7 @@ void IoT::sendTelemetry(float temperature, float humidity, bool setpointReached,
 
 //Finaly (Took too long)
 
-void IoT::Loop(float temperature, float humidity, bool setpointReached, bool armedActual)
+void IoT::Loop(double  temperature, double  humidity, bool setpointReached, bool armedActual)
 {
     if (!reconnectWiFi())
     {

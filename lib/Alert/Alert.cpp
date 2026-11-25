@@ -22,7 +22,7 @@ Alert::Alert(int alarmPin, bool *reachedSetpoint, int timeout, int period)
     Period = period;
 }
 
-Alert::Alert(int alarmPin, bool *reachedSetpoint, int timeout, int period, float temperatureTolerance)
+Alert::Alert(int alarmPin, bool *reachedSetpoint, int timeout, int period, double *temperatureTolerance)
 {
     AlarmPin = alarmPin;
     ReachedSetpoint = reachedSetpoint;
@@ -61,7 +61,7 @@ bool Alert::TimeoutCheck()
 }
 
 
-bool Alert::OverHumidityAlert(float CurrentHumidity, float HumidityMax)
+bool Alert::OverHumidityAlert(double  CurrentHumidity, double  HumidityMax)
 {
     if ((CurrentHumidity - HumidityMax) > 0.00)
     {
@@ -74,11 +74,11 @@ bool Alert::OverHumidityAlert(float CurrentHumidity, float HumidityMax)
     }
 }
 
-bool Alert::OverTempAlert(float Temperature, float SetPoint)
+bool Alert::OverTempAlert(double  Temperature, double  SetPoint)
 {
     if (ReadReachedSetpoint())
     {
-        if (Temperature >= (SetPoint + TemperatureTolerance) || Temperature <= (SetPoint - TemperatureTolerance))
+        if (Temperature >= (SetPoint + *TemperatureTolerance) || Temperature <= (SetPoint - *TemperatureTolerance))
         {
             MakeNoise();
             return true;
@@ -102,4 +102,10 @@ void Alert::MakeNoise()
         AlarmState = !AlarmState;
         digitalWrite(AlarmPin, AlarmState);
     }
+}
+
+void Alert::Silence()
+{
+    AlarmState = false;
+    digitalWrite(AlarmPin, LOW);
 }

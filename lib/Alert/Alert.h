@@ -10,7 +10,7 @@ class Alert {
         int TimeoutPreviousMillis = 0;
         int BlinkPreviousMillis = 0;
 
-        float TemperatureTolerance = 2;
+        double *TemperatureTolerance = nullptr;
 
         bool *ReachedSetpoint = nullptr;
 
@@ -18,7 +18,7 @@ class Alert {
         Alert(int AlarmPin, bool *reachedSetpoint);
         Alert(int AlarmPin, bool *reachedSetpoint, int timeout);
         Alert(int AlarmPin, bool *reachedSetpoint, int timeout, int period);
-        Alert(int AlarmPin, bool *reachedSetpoint, int timeout, int period, float temperatureTolerance);
+        Alert(int AlarmPin, bool *reachedSetpoint, int timeout, int period, double *temperatureTolerance);
 
         void Begin();
 
@@ -27,8 +27,9 @@ class Alert {
 
         bool TimeoutCheck();
 
-        bool OverHumidityAlert(float CurrentHumidity, float HumidityMax);
-        bool OverTempAlert(float Temperature, float SetPoint);
+        bool OverHumidityAlert(double  CurrentHumidity, double  HumidityMax);
+        bool OverTempAlert(double  Temperature, double  SetPoint);
 
         void MakeNoise();
+        void Silence();
 };

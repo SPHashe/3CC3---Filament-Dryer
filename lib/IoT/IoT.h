@@ -40,9 +40,9 @@ private:
     const char *SETPOINT_REACHED_ATTR = "SetpointReached";
 
     // Cloud-controlled values
-    float* TemperatureSetpoint = nullptr;
-    float* TemperatureTolerance = nullptr;
-    float* HumidityLimit = nullptr;
+    double * TemperatureSetpoint = nullptr;
+    double * TemperatureTolerance = nullptr;
+    double * HumidityLimit = nullptr;
     bool* ArmedCommanded = nullptr;
     bool* ArmedActual = nullptr;
 
@@ -89,7 +89,7 @@ private:
     void initWiFi();
     bool connectToThingsBoard();
     void ensureSubscriptions();
-    void sendTelemetry(float temperature, float humidity, bool setpointReached, bool armedActual);
+    void sendTelemetry(double  temperature, double  humidity, bool setpointReached, bool armedActual);
 
     static IoT *instance; 
     static void ProcessSharedAttributes(const JsonObjectConst &data);
@@ -97,11 +97,11 @@ private:
     static void RequestTimedOut();
 
 public:    
-    IoT(float *TemperatureSetpoint, float *TemperatureTolerance, float *HumidityLimit, bool* ArmedCommanded, bool *ArmedActual);
+    IoT(double  *TemperatureSetpoint, double  *TemperatureTolerance, double  *HumidityLimit, bool* ArmedCommanded, bool *ArmedActual);
 
     bool reconnectWiFi(); //One of the helpers
 
     void Begin();
 
-    void Loop(float temperature, float humidity, bool setpointReached, bool armedActual);
+    void Loop(double  temperature, double  humidity, bool setpointReached, bool armedActual);
 };

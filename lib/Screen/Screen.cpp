@@ -27,6 +27,7 @@ void Screen::Begin() {
 
 void Screen::Display(String Text, int Row) 
 {
+    //lcd.clear(); this makes the display freakout acc
     TextSent[Row] = Text;
     lcd.setCursor(0, Row);
     lcd.print(Text);
