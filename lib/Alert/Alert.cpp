@@ -56,6 +56,7 @@ bool Alert::TimeoutCheck()
     }
     else
     {
+        TimeoutPreviousMillis = millis();
         return false;
     }
 }

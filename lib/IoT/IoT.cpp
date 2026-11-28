@@ -2,43 +2,43 @@
 
 IoT *IoT::instance = nullptr;
 
-IoT::IoT(double  *temperatureSetpoint, double  *temperatureTolerance, double  *humidityLimit, bool* armedCommanded, bool *armedActual)
+IoT::IoT(double  *temperatureSetpoint, double  *temperatureTolerance, double  *humidityLimit, bool* armedCommanded, int *timeout)
 {
     TemperatureSetpoint = temperatureSetpoint ;
     TemperatureTolerance = temperatureTolerance;
     HumidityLimit = humidityLimit;
     ArmedCommanded = armedCommanded;
-    ArmedActual = armedActual;
+    Timeout = timeout;
 
     instance = this;
 }
 
 void IoT::Begin()
 {
-    initWiFi();
+    //initWiFi();
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 }
 
 void IoT::initWiFi()
 {
     Serial.println("Tryna Connect");
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    //WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     while (WiFi.status() != WL_CONNECTED)
     {
         delay(500);
-        Serial.println(".");
+        Serial.print(".");
     }
     Serial.println("\n Connected");
 }
 
-bool IoT::reconnectWiFi()
+bool IoT::connectWiFi()
 {
+    //WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     if (WiFi.status() == WL_CONNECTED)
     {
         return true;
     }
-    Serial.println("Disconnected, reconnecting");
-    initWiFi();
     return (WiFi.status() == WL_CONNECTED);
 }
 
@@ -72,6 +72,7 @@ void IoT::ensureSubscriptions()
 {
     if (!rpcSubscribed)
     {
+        rpc.RPC_Unsubscribe(); 
         if (rpc.RPC_Subscribe(rpcCallbacks.cbegin(), rpcCallbacks.cend()))
         {
             rpcSubscribed = true;
@@ -85,6 +86,7 @@ void IoT::ensureSubscriptions()
 
     if (!sharedAttrsSubscribed)
     {
+        sharedUpdate.Shared_Attributes_Unsubscribe();
         if (sharedUpdate.Shared_Attributes_Subscribe(sharedAttributesCallback))
         {
             sharedAttrsSubscribed = true;
@@ -132,6 +134,10 @@ void IoT::ProcessSharedAttributes(const JsonObjectConst &data)
         {
             *instance->ArmedCommanded = it->value().as<bool>();
         }
+        else if (strcmp(key, instance->TIMEOUT_TIME_ATTR) == 0)
+        {
+            *instance->ArmedCommanded = it->value().as<int>();
+        }
     }
 
     instance->attributesChanged = true;
@@ -149,13 +155,18 @@ void IoT::RequestTimedOut()
 }
 
 //Telemetry
-
-void IoT::sendTelemetry(double  temperature, double  humidity, bool setpointReached, bool armedActual)
+void IoT::sendTelemetry(double temperature, double  humidity, bool setpointReached, bool armedActual, bool heaterStatus, bool error, String errorMessage)
 {
     
     tb.sendTelemetryData("Temperature", temperature);
     tb.sendTelemetryData("Humidity", humidity);
+
     tb.sendTelemetryData("ActualArmed", armedActual);
+
+    tb.sendTelemetryData("HeaterStatus", heaterStatus);
+
+    tb.sendTelemetryData("ErrorStatus", error);
+    tb.sendTelemetryData("ErrorMessage", errorMessage.c_str());
 
     tb.sendTelemetryData(SETPOINT_REACHED_ATTR, setpointReached);
     tb.sendAttributeData("rssi", WiFi.RSSI());
@@ -163,15 +174,15 @@ void IoT::sendTelemetry(double  temperature, double  humidity, bool setpointReac
 
 //Finaly (Took too long)
 
-void IoT::Loop(double  temperature, double  humidity, bool setpointReached, bool armedActual)
+bool IoT::Loop(double  temperature, double  humidity, bool setpointReached, bool armedActual, bool heaterStatus, bool error, String errorMessage)
 {
-    if (!reconnectWiFi())
+    if (!connectWiFi())
     {
-        return;
+        return false;
     }
     if (!connectToThingsBoard())
     {
-        return;
+        return false;
     }
 
     tb.loop();
@@ -187,13 +198,9 @@ void IoT::Loop(double  temperature, double  humidity, bool setpointReached, bool
     if (millis() - previousDataSend > TELEMETRY_SEND_INTERVAL_MS)
     {
         previousDataSend = millis();
-        sendTelemetry(temperature, humidity, setpointReached, armedActual);
+        sendTelemetry(temperature, humidity, setpointReached, armedActual, heaterStatus, error, errorMessage);
     }
 
-    if (setpointReached != lastSetpointReached)
-    {
-        lastSetpointReached = setpointReached;
-        tb.sendAttributeData(SETPOINT_REACHED_ATTR, setpointReached);
-    }
+    return true;
 }
 
